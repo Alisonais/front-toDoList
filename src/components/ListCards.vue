@@ -36,25 +36,24 @@ function countTask() {
 }
 
 function handleCreateTask(task: string) {
-  let data:string = '';
+  let data: string = '';
   const taskObj: ITask = {
     description: task,
   };
   const promise = () =>
-  axios.post('http://192.168.100.120:8000/api/todolist', taskObj).then((res) => {
-    data = res.data.message;
-    const newTask = res.data.task;
-    cardArray.value.unshift(newTask);
-    console.log(cardArray.value);
-    countTask();
-  }).catch((res)=>{
-    data = res.response.data.message;
-  });
+    axios.post('http://192.168.100.120:8000/api/todolist', taskObj).then((res) => {
+      data = res.data.message;
+      const newTask = res.data.task;
+      cardArray.value.unshift(newTask);
+      countTask();
+    }).catch((res) => {
+      data = res.response.data.message;
+    });
 
-  toast.promise(promise,{
+  toast.promise(promise, {
     loading: 'Criando Tarefa...',
-    success:()=> data,
-    error: ()=> data,
+    success: () => data,
+    error: () => data,
   })
 
 };
@@ -73,7 +72,7 @@ function handleCardComplete(task: ITask) {
         }
       })
       countTask();
-    }).catch((res)=>{
+    }).catch((res) => {
       data = res.response.data.message;
       throw new Error(res.response.data.message);
     })
@@ -86,23 +85,57 @@ function handleCardComplete(task: ITask) {
 };
 
 function handleRemoveTask(id: number) {
-  let data:string;
+  let data: string;
   const promise = () =>
-  axios.delete(`http://192.168.100.120:8000/api/todolist/${id}`).then((res) => {
-    cardArray.value = cardArray.value.filter((item: ITask) => {
-      return item.id !== id
+    axios.delete(`http://192.168.100.120:8000/api/todolist/${id}`).then((res) => {
+      cardArray.value = cardArray.value.filter((item: ITask) => {
+        return item.id !== id
+      });
+      data = res.data.message;
+      countTask();
+    }).catch((res) => {
+      data = res.response.data.message;
+      throw new Error();
     });
-    data = res.data.message;
-    countTask();
-  }).catch((res)=>{
-    data = res.response.data.message;
-    throw new Error();
-  });
 
-  toast.promise(promise,{
-    loading: 'deletando tarefa...',
-    success: ()=> data,
-    error: ()=> data,
+  toast.promise(promise, {
+    loading: 'Deletando tarefa...',
+    success: () => data,
+    error: () => data,
+  })
+
+}
+
+function handleUpdate(description: string, task: ITask) {
+  let data: string = '';
+  const newTask: ITask = {
+    id: task.id,
+    description: description,
+    completed: task.completed
+  };
+  const promise = () =>
+    axios.put(`http://192.168.100.120:8000/api/todolist/${task.id}`, newTask)
+    .then((res)=>{
+      data = res.data.message;
+      cardArray.value = cardArray.value.map((item: ITask) => {
+        if (item.id === task.id) {
+          item.description = description;
+          return { ...item };
+        } else {
+          return { ...item }
+        }
+      })
+      // countTask();
+    })
+    .catch((res)=>{
+      data = res.response.data.message;
+      throw new Error();
+    });
+
+    toast.promise(promise, {
+    loading: 'Aualizando tarefa...',
+    success: () => data,
+    error: () => data,
   })
 
 }
@@ -113,6 +146,7 @@ function handleRemoveTask(id: number) {
 <template>
   <InputCreateCard :onCreate="handleCreateTask" />
   <CardHeaderList :totalTask='totalTask' :taskComplete="taskComplete" />
-  <InputCardlistAll :cards='cardArray || []' :onComplete="handleCardComplete" :onRemove="handleRemoveTask" />
+  <InputCardlistAll :cards='cardArray || []' :onComplete="handleCardComplete" :onUpdate="handleUpdate"
+    :onRemove="handleRemoveTask" />
 
 </template>
